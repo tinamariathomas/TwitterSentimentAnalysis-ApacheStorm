@@ -10,6 +10,7 @@ public class AnalysisTopology {
 
         TopologyBuilder topologyBuilder = new TopologyBuilder();
         topologyBuilder.setSpout("tweets", new TweetSpout(), 10);
+        topologyBuilder.setBolt("sentiments",new SentimentBolt(),10).shuffleGrouping("tweets");
 
         Config conf = new Config();
 

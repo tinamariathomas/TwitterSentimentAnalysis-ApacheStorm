@@ -23,6 +23,19 @@
             <artifactId>twitter4j-stream</artifactId>
             <version>4.0.4</version>
         </dependency>
+
+        <dependency>
+            <groupId>edu.stanford.nlp</groupId>
+            <artifactId>stanford-corenlp</artifactId>
+            <version>3.3.1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>edu.stanford.nlp</groupId>
+            <artifactId>stanford-corenlp</artifactId>
+            <version>3.3.1</version>
+            <classifier>models</classifier>
+        </dependency>
     </dependencies>
 
     <build>
