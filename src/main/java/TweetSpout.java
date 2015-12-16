@@ -12,6 +12,7 @@ import twitter4j.*;
 import twitter4j.conf.ConfigurationBuilder;
 
 import java.util.Map;
+import java.util.StringTokenizer;
 import java.util.concurrent.LinkedBlockingQueue;
 
 public class TweetSpout extends BaseRichSpout {
@@ -21,15 +22,14 @@ public class TweetSpout extends BaseRichSpout {
 
     TwitterStream twitterStream;
 
-    LinkedBlockingQueue<String> queue = null;
+    LinkedBlockingQueue<Status> queue = null;
 
     private class TweetListener implements StatusListener {
 
         @Override
         public void onStatus(Status status) {
-            HashtagEntity[] hashtags = status.getHashtagEntities();
             if (status.getLang().equals("en")) {
-                    queue.offer(status.getText());
+                queue.offer(status);
             }
         }
 
@@ -53,7 +53,9 @@ public class TweetSpout extends BaseRichSpout {
         public void onException(Exception e) {
             e.printStackTrace();
         }
-    };
+    }
+
+    ;
 
     public TweetSpout() {
         ConfigurationProvider config = new ConfigurationProvider();
@@ -68,7 +70,7 @@ public class TweetSpout extends BaseRichSpout {
             Map map,
             TopologyContext topologyContext,
             SpoutOutputCollector spoutOutputCollector) {
-        queue = new LinkedBlockingQueue<String>(1000);
+        queue = new LinkedBlockingQueue<Status>(1000);
         collector = spoutOutputCollector;
         ConfigurationBuilder config =
                 new ConfigurationBuilder()
@@ -88,14 +90,17 @@ public class TweetSpout extends BaseRichSpout {
 
     @Override
     public void nextTuple() {
-        String ret = queue.poll();
+        Status tweet = queue.poll();
 
-        if (ret == null) {
+        if (tweet == null) {
             Utils.sleep(50);
             return;
         }
+        try {
+            collector.emit(new Values(tweet.getText(), tweet.getPlace().getCountry()));
+        } catch (NullPointerException e) {
 
-        collector.emit(new Values(ret));
+        }
     }
 
     @Override
@@ -106,15 +111,13 @@ public class TweetSpout extends BaseRichSpout {
     @Override
     public Map<String, Object> getComponentConfiguration() {
         Config ret = new Config();
-
         ret.setMaxTaskParallelism(1);
-
         return ret;
     }
 
     @Override
     public void declareOutputFields(
             OutputFieldsDeclarer outputFieldsDeclarer) {
-        outputFieldsDeclarer.declare(new Fields("hash-tag"));
+        outputFieldsDeclarer.declare(new Fields("tweet", "country"));
     }
 }
