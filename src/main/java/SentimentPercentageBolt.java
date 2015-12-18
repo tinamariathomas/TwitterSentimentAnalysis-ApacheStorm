@@ -7,11 +7,12 @@ import backtype.storm.topology.base.BaseRichBolt;
 import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Tuple;
 import backtype.storm.tuple.Values;
+import org.json.simple.JSONObject;
 
 import java.util.HashMap;
 import java.util.Map;
 
-public class SentimentAggregatorBolt extends BaseRichBolt {
+public class SentimentPercentageBolt extends BaseRichBolt {
     OutputCollector outputCollector;
     Map<String, SentimentMap> countrySentimentMap;
 
@@ -38,17 +39,17 @@ public class SentimentAggregatorBolt extends BaseRichBolt {
             countrySentimentMap.put(country, map);
         }
 
-        String maxSentiment = null;
-        int maxSentimentValue=0;
-        for(HashMap.Entry<String,Integer> entry:map.entrySet()){
-            if(entry.getValue()>maxSentimentValue){
-                maxSentimentValue=entry.getValue();
-                maxSentiment=entry.getKey();
-            }
+        int sum = 0;
+        for (Integer count : map.values()) {
+            sum += count;
         }
 
-        outputCollector.emit(new Values(country,maxSentiment));
-
+        JSONObject sentimentPercentageJson = new JSONObject();
+        for (HashMap.Entry<String, Integer> entry : map.entrySet()) {
+            double percentage = (double)entry.getValue()*100/sum;
+            sentimentPercentageJson.put(entry.getKey(),String.valueOf(Math.round(percentage))+"%");
+        }
+        outputCollector.emit(new Values(country,sentimentPercentageJson.toJSONString()));
     }
 
     @Override
